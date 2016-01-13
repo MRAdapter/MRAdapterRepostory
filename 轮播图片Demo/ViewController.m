@@ -31,6 +31,7 @@
 - (void)viewDidLoad {
     [super viewDidLoad];
     // Do any additional setup after loading the view, typically from a nib.
+    int a=0;
     //水平滚动
     [ADPCollectionView collectionViewWithFrame:CGRectMake(20, 50, 250, 150)
                                     imageArray:self.imagesArray
