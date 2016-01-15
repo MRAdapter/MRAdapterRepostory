@@ -10,9 +10,25 @@
 #import "ADPCollectionView.h"
 @interface ViewController ()
 @property(nonatomic,strong)NSMutableArray* imagesArray;
+@property(nonatomic,strong)NSMutableArray* customViewArray;
 @end
 
 @implementation ViewController
+
+-(NSMutableArray *)customViewArray{
+    if (!_customViewArray) {
+        _customViewArray  = [NSMutableArray array];
+        for (int i = 1 ; i < 6 ; i++) {
+            UILabel* lable=[UILabel new];
+            lable.backgroundColor=[UIColor redColor];
+            lable.frame=CGRectMake(100, 50, 100, 20);
+            lable.text=[NSString stringWithFormat:@"视图%d",i];
+            [_customViewArray addObject:lable];
+        }
+    }
+    return _customViewArray;
+}
+
 -(NSArray *)imagesArray{
     if (!_imagesArray) {
         _imagesArray  = [NSMutableArray array];
@@ -38,12 +54,8 @@
                                   timeInterval:2
                                           view:self.view];
     
-    //竖直滚动
-    [ADPCollectionView collectionViewWithFrame:CGRectMake(20, 250, 250, 150)
-                                    imageArray:self.imagesArray
-                                     Direction:UICollectionViewScrollDirectionVertical
-                                  timeInterval:2
-                                          view:self.view];
+    //自定义视图竖直滚动
+    [ADPCollectionView collectionViewWithFrame:CGRectMake(20, 250, 250, 150) CustomVIewArray:self.customViewArray Direction:UICollectionViewScrollDirectionVertical timeInterval:1.3 view:self.view showPage:NO];
 
 }
 
