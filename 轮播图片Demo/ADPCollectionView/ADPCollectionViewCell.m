@@ -49,5 +49,6 @@
     [super layoutSubviews];
     
     self.imageView.frame = CGRectMake(0, 0, self.imageSize.width, self.imageSize.height);
+//    NSLog(@"%@",self.imageView);
 }
 @end

@@ -8,10 +8,11 @@
 
 #import "ADPCollectionView.h"
 #import "ADPCollectionViewCell.h"
+#import "APDCustomCollectionViewCell.h"
 @interface ADPCollectionView ()<UICollectionViewDelegate,UICollectionViewDataSource>
 
 @property (nonatomic,strong)NSArray * imageArray;
-
+@property (nonatomic,strong)NSArray * customViews;
 //全局属性图片滚动到的位置
 @property (nonatomic,assign)NSInteger index;
 
@@ -29,8 +30,9 @@
 
 
 @implementation ADPCollectionView
+
 //实例化collectionView的方法
-+(instancetype)collectionViewWithFrame:(CGRect)frame imageArray:(NSArray *)imageArray Direction:(UICollectionViewScrollDirection)direction timeInterval:(CGFloat)timeInterval view:(UIView *)view{
++(void)collectionViewWithFrame:(CGRect)frame imageArray:(NSArray *)imageArray Direction:(UICollectionViewScrollDirection)direction timeInterval:(CGFloat)timeInterval view:(UIView *)view{
     
     //实例化流水布局
     //    YJYYCollectionViewFlowlayout * flowlayout = [YJYYCollectionViewFlowlayout createFlowlayoutWithClassName:@"YJYYCollectionView"];
@@ -87,7 +89,69 @@
     //添加pageControl
     [view addSubview:page];
     
-    return collectionView;
+}
+
+//实例化collectionView的方法
++(void)collectionViewWithFrame:(CGRect)frame CustomVIewArray:(NSArray *)customViewArr Direction:(UICollectionViewScrollDirection)direction timeInterval:(CGFloat)timeInterval view:(UIView *)view showPage:(BOOL)show{
+    //实例化流水布局
+    //    YJYYCollectionViewFlowlayout * flowlayout = [YJYYCollectionViewFlowlayout createFlowlayoutWithClassName:@"YJYYCollectionView"];
+    UICollectionViewFlowLayout* flowlayout=[[UICollectionViewFlowLayout alloc]init];
+    flowlayout.scrollDirection=direction;
+    flowlayout.itemSize = CGSizeMake(frame.size.width, frame.size.height);
+    
+    //设置最小行和列间距
+    flowlayout.minimumLineSpacing = 0;
+    
+    flowlayout.minimumInteritemSpacing = 0;
+    
+    //设置组内边距
+    flowlayout.sectionInset = UIEdgeInsetsMake(0, 0, 0, 0);
+    
+    //实例化collectionView
+    ADPCollectionView * collectionView = [[ADPCollectionView alloc]initWithFrame:frame collectionViewLayout:flowlayout];
+    
+    collectionView.backgroundColor = [UIColor grayColor];
+    
+    //给全局属性赋值
+    collectionView.customViews = customViewArr;
+    
+    collectionView.timeInterval = timeInterval;
+    
+    //添加定时器
+    [collectionView addTimer];
+    
+    
+    
+    //添加pageController
+    UIPageControl * page = [UIPageControl new];
+    page.currentPage = 0;
+    
+    page.numberOfPages = customViewArr.count;
+    
+    page.currentPageIndicatorTintColor = [UIColor orangeColor];
+    
+    page.pageIndicatorTintColor = [UIColor cyanColor];
+    //根据图片张数获取page的宽高
+    CGSize  pageSize = [page sizeForNumberOfPages:collectionView.imageArray.count];
+    
+    page.frame = CGRectMake(0, 0, pageSize.width, pageSize.height);
+    
+    page.center = CGPointMake(collectionView.center.x, CGRectGetMaxY(collectionView.frame)-20);
+    
+    collectionView.page = page;
+    
+    collectionView.collectionViewSize = frame.size;
+    
+    //添加collectionView
+    [view addSubview:collectionView];
+    
+    //添加pageControl
+    [view addSubview:page];
+    if (show) {
+        page.hidden=NO;
+    }else{
+        page.hidden=YES;
+    }
 }
 
 -(instancetype)initWithFrame:(CGRect)frame collectionViewLayout:(UICollectionViewLayout *)layout{
@@ -120,7 +184,7 @@
     
     //注册cell 一般cell我们自定义
     [self registerClass:[ADPCollectionViewCell class] forCellWithReuseIdentifier:@"ADPCollectionViewCell"];
-    
+    [self registerClass:[APDCustomCollectionViewCell class] forCellWithReuseIdentifier:@"APDCustomCollectionViewCell"];
     self.index = 1000;
     
     NSIndexPath * indexPath = [NSIndexPath indexPathForItem:self.index inSection:0];
@@ -156,8 +220,12 @@
     NSIndexPath *indexpath = [NSIndexPath indexPathForItem:self.index inSection:0];
     
     [self scrollToItemAtIndexPath:indexpath atScrollPosition:UICollectionViewScrollPositionNone animated:YES];
+    if (self.imageArray) {
+        self.page.currentPage = self.index%self.imageArray.count;
+    }else{
+        self.page.currentPage = self.index%self.customViews.count;
+    }
     
-    self.page.currentPage = self.index%self.imageArray.count;
 }
 
 //数据源方法
@@ -168,15 +236,20 @@
 }
 
 -(UICollectionViewCell *)collectionView:(UICollectionView *)collectionView cellForItemAtIndexPath:(NSIndexPath *)indexPath{
-    
-    ADPCollectionViewCell * cell = [collectionView dequeueReusableCellWithReuseIdentifier:@"ADPCollectionViewCell" forIndexPath:indexPath];
-    
-    //取出图片赋值给cell
-    cell.image = self.imageArray[indexPath.item%self.imageArray.count];
-    
-    cell.imageSize = self.collectionViewSize;
-    
-    return cell;
+    ADPCollectionView* view=(ADPCollectionView*)collectionView;
+    if (view.imageArray) {
+        ADPCollectionViewCell * cell=[collectionView dequeueReusableCellWithReuseIdentifier:@"ADPCollectionViewCell" forIndexPath:indexPath];
+        //取出图片赋值给cell
+        cell.image = self.imageArray[indexPath.item%self.imageArray.count];
+        
+        cell.imageSize = self.collectionViewSize;
+        return cell;
+    }else{
+        //将自定义View赋值给Cell
+        APDCustomCollectionViewCell * cell=[collectionView dequeueReusableCellWithReuseIdentifier:@"APDCustomCollectionViewCell" forIndexPath:indexPath];
+        cell.customView=self.customViews[indexPath.item%self.customViews.count];
+        return cell;
+    }
 }
 
 
@@ -193,7 +266,11 @@
     
     self.index = index;
     
-    self.page.currentPage = self.index%self.imageArray.count;
+    if (self.imageArray) {
+        self.page.currentPage = self.index%self.imageArray.count;
+    }else{
+        self.page.currentPage = self.index%self.customViews.count;
+    }
     
     [self addTimer];
 }
